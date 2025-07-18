@@ -1,56 +1,85 @@
 import streamlit as st
 import fitz
 import os
-import tempfile
+import re
 
-st.set_page_config(page_title="PDF Scanner", layout="centered")
-
+st.set_page_config(page_title="PDF Scanner", layout="wide")
 st.title("PDF Scanner")
 st.markdown("Upload your PDFs my love :)")
 
+SEARCH_TERMS = ["gender", "social", "inclusion", "vulnerable", "women"]
+OUTPUT_FOLDER = os.path.join(os.getcwd(), "highlighted_pdfs")
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-def highlight_terms(pdf_bytes, original_filename):
+
+def extract_paragraphs(text):
+    return re.split(r"\n\s*\n|(?<=\.)\s{2,}", text)
+
+
+def find_matching_paragraphs(text, terms):
+    paragraphs = extract_paragraphs(text)
+    matches = []
+    for para in paragraphs:
+        for term in terms:
+            if re.search(rf"\b{re.escape(term)}\b", para, re.IGNORECASE):
+                matches.append((term, para.strip()))
+    return matches
+
+
+def highlight_and_extract(pdf_bytes, original_filename):
     doc = fitz.open("pdf", pdf_bytes)
-    found = False
+    base_name = os.path.splitext(os.path.basename(original_filename))[0]
+    output_filename = f"{base_name}_highlighted.pdf"
+    output_path = os.path.join(OUTPUT_FOLDER, output_filename)
 
-    search_terms = ["data", "and"]
+    term_data = []
 
-    for term in search_terms:
-        for page in doc:
+    for page_number, page in enumerate(doc, start=1):
+        page_text = page.get_text()
+        matched_paragraphs = find_matching_paragraphs(page_text, SEARCH_TERMS)
+
+        for term, para in matched_paragraphs:
+            term_data.append({
+                "doc": base_name,
+                "page": page_number,
+                "term": term,
+                "paragraph": para
+            })
+
+        for term in SEARCH_TERMS:
             instances = page.search_for(term, quads=False)
             for inst in instances:
                 highlight = page.add_highlight_annot(inst)
                 highlight.update()
-                found = True
 
-    if not found:
-        return None, None
-
-    base_name = os.path.splitext(os.path.basename(original_filename))[0]
-    output_filename = f"{base_name}_highlighted.pdf"
-    temp_path = os.path.join(tempfile.gettempdir(), output_filename)
-
-    doc.save(temp_path)
+    doc.save(output_path)
     doc.close()
 
-    with open(temp_path, "rb") as f:
+    with open(output_path, "rb") as f:
         result_bytes = f.read()
 
-    return result_bytes, temp_path, output_filename
+    return result_bytes, output_path, output_filename, term_data
 
 
 uploaded_files = st.file_uploader("", type="pdf", accept_multiple_files=True)
 
-if st.button("Highlight"):
-    if not uploaded_files:
-        st.warning("Please upload at least one PDF")
-    else:
+if uploaded_files:
+    if st.button("Highlight & Extract"):
+        all_term_data = []
         for uploaded_file in uploaded_files:
             pdf_bytes = uploaded_file.read()
             uploaded_filename = "0_" + uploaded_file.name
-            result_bytes, temp_path, output_filename = highlight_terms(pdf_bytes, uploaded_filename)
+            result_bytes, saved_path, out_name, term_data = highlight_and_extract(pdf_bytes, uploaded_filename)
+
+            all_term_data.extend(term_data)
 
             if result_bytes:
-                st.success(f"✅ Highlighted terms in **{uploaded_file.name}**")
+                st.success(f"Highlighted terms in **{uploaded_file.name}**")
+                st.caption(f"Saved temporarily at: `{saved_path}`")
 
-                st.caption(f"Saved temporarily at: `{temp_path}`")
+        st.markdown("---")
+        st.subheader("Extracted Paragraphs")
+        for match in all_term_data:
+            with st.expander(f"{match['doc']} | Page {match['page']} | Term: '{match['term']}'"):
+                st.markdown(f"**Term:** {match['term']}")
+                st.markdown(f"**Paragraph:** {match['paragraph']}")
