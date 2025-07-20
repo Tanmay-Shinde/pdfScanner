@@ -7,7 +7,21 @@ st.set_page_config(page_title="PDF Scanner", layout="wide")
 st.title("PDF Scanner")
 st.markdown("Upload your PDFs my love :)")
 
-SEARCH_TERMS = ["gender", "social", "inclusion", "vulnerable", "women"]
+SEARCH_TERMS = ["Gender-Inclusive Policies", "Gender Inclusive Policies", "gender equality", "gender equity",
+                "women's empowerment", "gender-sensitive", "gender-responsive", "gender-transformative",
+                "gender mainstreaming", "Participation", "Leadership", "women's participation", "women in leadership",
+                "female participation", "Adaptation", "Resilience", "gender-sensitive adaptation", "women's resilience",
+                "gender-equitable resilience", "Livelihoods", "Capacity Building", "women's livelihoods",
+                "gender-responsive livelihoods", "women's access to finance", "Social Inclusion", "Justice",
+                "gender justice", "gender-based vulnerabilities", "social equity", "climate justice for women",
+                "gendered approach", "feminist approach", "rights of women", "gender equity in climate action",
+                "skills development for women", "capacity building for women", "empowering women",
+                "women's training programs", "economic empowerment of women", "women's climate-smart agriculture",
+                "women's rights", "gendered impacts", "gender-inclusive adaptation", "women in adaptation",
+                "gendered vulnerabilities", "women and climate resilience", "gender-balanced governance",
+                "inclusive decision-making", "women-led initiatives", "women's roles", "female leaders",
+                "gender-based analysis", "gender-disaggregated data"]
+
 OUTPUT_FOLDER = os.path.join(os.getcwd(), "highlighted_pdfs")
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
@@ -58,7 +72,7 @@ def highlight_and_extract(pdf_bytes, original_filename):
     with open(output_path, "rb") as f:
         result_bytes = f.read()
 
-    return result_bytes, output_path, output_filename, term_data
+    return result_bytes, output_filename, term_data
 
 
 uploaded_files = st.file_uploader("", type="pdf", accept_multiple_files=True)
@@ -69,17 +83,23 @@ if uploaded_files:
         for uploaded_file in uploaded_files:
             pdf_bytes = uploaded_file.read()
             uploaded_filename = "0_" + uploaded_file.name
-            result_bytes, saved_path, out_name, term_data = highlight_and_extract(pdf_bytes, uploaded_filename)
+            result_bytes, out_name, term_data = highlight_and_extract(pdf_bytes, uploaded_filename)
 
             all_term_data.extend(term_data)
 
             if result_bytes:
                 st.success(f"Highlighted terms in **{uploaded_file.name}**")
-                st.caption(f"Saved temporarily at: `{saved_path}`")
 
-        st.markdown("---")
-        st.subheader("Extracted Paragraphs")
-        for match in all_term_data:
-            with st.expander(f"{match['doc']} | Page {match['page']} | Term: '{match['term']}'"):
-                st.markdown(f"**Term:** {match['term']}")
-                st.markdown(f"**Paragraph:** {match['paragraph']}")
+                st.download_button(
+                    label="Download Highlighted PDF",
+                    data=result_bytes,
+                    file_name=out_name,
+                    mime="application/pdf",
+                )
+
+                st.markdown("---")
+                st.subheader("Extracted Paragraphs")
+                for match in all_term_data:
+                    with st.expander(f"{match['doc']} | Page {match['page']} | Term: '{match['term']}'"):
+                        st.markdown(f"**Term:** {match['term']}")
+                        st.markdown(f"**Paragraph:** {match['paragraph']}")
