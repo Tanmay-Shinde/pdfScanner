@@ -5,13 +5,13 @@ import re
 
 st.set_page_config(page_title="PDF Scanner", layout="wide")
 st.title("PDF Scanner")
-st.markdown("Upload your PDFs my love :)")
+st.markdown("Upload PDFs")
 
-SEARCH_TERMS = ["Gender-Inclusive Policies", "Gender Inclusive Policies", "gender equality", "gender equity",
-                "women's empowerment", "gender-sensitive", "gender-responsive", "gender-transformative",
+SEARCH_TERMS = ["Gender-Inclusive Policies", "Gender Inclusive Policies", "gender equality", "gender equity", "gender",
+                "women's empowerment", "gender-sensitive", "gender-responsive", "gender-transformative", "women",
                 "gender mainstreaming", "Participation", "Leadership", "women's participation", "women in leadership",
                 "female participation", "Adaptation", "Resilience", "gender-sensitive adaptation", "women's resilience",
-                "gender-equitable resilience", "Livelihoods", "Capacity Building", "women's livelihoods",
+                "gender-equitable resilience", "Livelihoods", "Capacity Building", "women's livelihoods", "woman",
                 "gender-responsive livelihoods", "women's access to finance", "Social Inclusion", "Justice",
                 "gender justice", "gender-based vulnerabilities", "social equity", "climate justice for women",
                 "gendered approach", "feminist approach", "rights of women", "gender equity in climate action",
